@@ -92,7 +92,8 @@ public class CheEndToEndTest {
 		testsPopup.waitUntilExists(Popup.SUCCESSFULL_TESTS_TITLE, 10);
 
 		explorer.openPomXml();
-		codeEditor.findDependencies();
+		codeEditor.writeDependency();
+		codeEditor.verifyAnnotationErrorIsPresent();
 	}
 
 	private void checkTestResults() {
