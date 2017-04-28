@@ -10,6 +10,7 @@
  ******************************************************************************/
 package redhat.che.e2e.tests.selenium.ide;
 
+import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -21,12 +22,9 @@ public class Popup {
     public static final String SUCCESSFULL_TESTS_TITLE = "Test runner executed successfully";
 
     private static final String DEBUG_POPUP_WINDOW_PREFIX = "gwt-debug-popup-titlegwt-uid-";
-    
+
+    @Drone
     private WebDriver driver;
-    
-    public Popup(WebDriver driver) {
-        this.driver = driver;
-    }
     
     public void waitUntilExists(String title, long timeout) {
         String locator = String.format("//div[starts-with(@id, '%s')]//div[@title='%s']", 

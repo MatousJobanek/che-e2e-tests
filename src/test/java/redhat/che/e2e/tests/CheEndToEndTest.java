@@ -12,14 +12,18 @@ package redhat.che.e2e.tests;
 
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.drone.api.annotation.Drone;
+import org.jboss.arquillian.graphene.findby.FindByJQuery;
 import org.jboss.arquillian.junit.Arquillian;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.FindBy;
 import redhat.che.e2e.tests.provider.CheWorkspaceProvider;
 import redhat.che.e2e.tests.resource.CheWorkspace;
 import redhat.che.e2e.tests.resource.CheWorkspaceStatus;
+import redhat.che.e2e.tests.selenium.ide.ContextMenu;
 import redhat.che.e2e.tests.selenium.ide.Labels;
 import redhat.che.e2e.tests.selenium.ide.Popup;
 import redhat.che.e2e.tests.selenium.ide.ProjectExplorer;
@@ -33,16 +37,30 @@ import static redhat.che.e2e.tests.Constants.OPENSHIFT_MASTER_URL;
 import static redhat.che.e2e.tests.Constants.OPENSHIFT_NAMESPACE;
 import static redhat.che.e2e.tests.Constants.PATH_TO_TEST_FILE;
 import static redhat.che.e2e.tests.Constants.PRESERVE_WORKSPACE_PROPERTY_NAME;
-import static redhat.che.e2e.tests.Constants.PROJECT_NAME;
 
 @RunWith(Arquillian.class)
 public class CheEndToEndTest {
 
 	private static final Logger logger = Logger.getLogger(CheEndToEndTest.class);
 
+	@FindBy(id = "gwt-debug-editorPartStack-contentPanel")
+	private CodeEditorFragment codeEditor;
+
+	@FindBy(id = "gwt-debug-projectTree")
+	private ProjectExplorer explorer;
+
+	@FindBy(id = "gwt-debug-infoPanel")
+	private Popup testsPopup;
+
+	@FindBy(className = "ide-page-frame")
+	private WebElement idePageFrameElement;
+
+	@FindByJQuery("tbody:has(tr[id^='gwt-debug-contextMenu'])")
+	private ContextMenu contextMenu;
+
 	@Drone
 	private WebDriver driver;
-	
+
 	private static CheWorkspace workspace;
 	
 	@Test
@@ -59,21 +77,22 @@ public class CheEndToEndTest {
 		driver.get(workspace.getIdeLink());
 		// Running single JUnit Class
 		logger.info("Running JUnit test class on the project");
-		runTest(PROJECT_NAME);
+		runTest();
 		checkTestResults();
 	}
 
-	private void runTest(String projectName) {
-		ProjectExplorer explorer = new ProjectExplorer(driver);
-		explorer.selectItem(PATH_TO_TEST_FILE);		
-		explorer.openContextMenuOnItem(PATH_TO_TEST_FILE);
-		explorer.selectContextMenuItem(Labels.ContextMenuItem.TEST, Labels.ContextMenuItem.JUNIT_CLASS);
-        
+	private void runTest() {
+		explorer.selectItem(PATH_TO_TEST_FILE);
+		contextMenu.openContextMenuOnItem(PATH_TO_TEST_FILE);
+		contextMenu.selectContextMenuItem(Labels.ContextMenuItem.TEST, Labels.ContextMenuItem.JUNIT_CLASS);
+
 		// Wait until tests finish
-		Popup testsPopup = new Popup(driver);
-        testsPopup.waitUntilExists(Popup.RUNNING_TESTS_TITLE, 20);
-        testsPopup.waitWhileExists(Popup.RUNNING_TESTS_TITLE, 100);
-        testsPopup.waitUntilExists(Popup.SUCCESSFULL_TESTS_TITLE, 10);
+		testsPopup.waitUntilExists(Popup.RUNNING_TESTS_TITLE, 20);
+		testsPopup.waitWhileExists(Popup.RUNNING_TESTS_TITLE, 100);
+		testsPopup.waitUntilExists(Popup.SUCCESSFULL_TESTS_TITLE, 10);
+
+		explorer.openPomXml();
+		codeEditor.findDependencies();
 	}
 
 	private void checkTestResults() {
