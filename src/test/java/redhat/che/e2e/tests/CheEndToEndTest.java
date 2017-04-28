@@ -30,6 +30,7 @@ import redhat.che.e2e.tests.selenium.ide.ProjectExplorer;
 import redhat.che.e2e.tests.selenium.ide.TestResultsView;
 import redhat.che.e2e.tests.service.CheWorkspaceService;
 
+import static org.jboss.arquillian.graphene.Graphene.waitAjax;
 import static redhat.che.e2e.tests.Constants.CHE_STARTER_URL;
 import static redhat.che.e2e.tests.Constants.CREATE_WORKSPACE_REQUEST_JSON;
 import static redhat.che.e2e.tests.Constants.KEYCLOAK_TOKEN;
@@ -58,11 +59,20 @@ public class CheEndToEndTest {
 	@FindByJQuery("tbody:has(tr[id^='gwt-debug-contextMenu'])")
 	private ContextMenu contextMenu;
 
+	@FindBy(id = "gwt-debug-MenuItem/profileGroup-true")
+	private WebElement profileMenuItem;
+
+	@FindBy(id = "topmenu/Profile/Preferences")
+	private WebElement profilePereferencesMenuItem;
+
+	@FindByJQuery("div:contains('Preferences'):contains('Java Compiler'):last")
+	private PreferencesWindow preferencesWindow;
+
 	@Drone
 	private WebDriver driver;
 
 	private static CheWorkspace workspace;
-	
+
 	@Test
 	public void testCreateWorkspaceAndHandleProject() {
 		logger.info("Calling che starter to create a new workspace on OpenShift");
@@ -94,6 +104,11 @@ public class CheEndToEndTest {
 		explorer.openPomXml();
 		codeEditor.writeDependency();
 		codeEditor.verifyAnnotationErrorIsPresent();
+
+		waitAjax().until().element(profileMenuItem).is().visible();
+		profileMenuItem.click();
+		waitAjax().until().element(profilePereferencesMenuItem).is().visible();
+		profilePereferencesMenuItem.click();
 	}
 
 	private void checkTestResults() {
