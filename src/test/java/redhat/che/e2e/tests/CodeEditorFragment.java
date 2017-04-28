@@ -36,7 +36,7 @@ public class CodeEditorFragment {
         Actions actions = new Actions(browser);
         actions.moveToElement(emptyElementAfterVertxDep);
         actions.click();
-        actions.sendKeys(new String[] {dependencyToAdd});
+        actions.sendKeys(dependencyToAdd);
         actions.build().perform();
     }
 

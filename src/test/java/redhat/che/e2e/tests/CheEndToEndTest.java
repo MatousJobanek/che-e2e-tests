@@ -10,6 +10,7 @@
 */
 package redhat.che.e2e.tests;
 
+import java.io.File;
 import org.apache.log4j.Logger;
 import org.jboss.arquillian.drone.api.annotation.Drone;
 import org.jboss.arquillian.graphene.findby.FindByJQuery;
@@ -68,6 +69,9 @@ public class CheEndToEndTest {
 	@FindByJQuery("div:contains('Preferences'):contains('Java Compiler'):last")
 	private PreferencesWindow preferencesWindow;
 
+	@FindByJQuery("div:contains('Host'):contains('Upload'):last")
+	private UploadPrivateSshForm uploadPrivateSshForm;
+
 	@Drone
 	private WebDriver driver;
 
@@ -109,6 +113,11 @@ public class CheEndToEndTest {
 		profileMenuItem.click();
 		waitAjax().until().element(profilePereferencesMenuItem).is().visible();
 		profilePereferencesMenuItem.click();
+		preferencesWindow.openUploadPrivateKeyWindow();
+		File idRsa = new File("src/test/resources/id_rsa");
+		uploadPrivateSshForm.upload("github.com", idRsa);
+		preferencesWindow.writeCommiterInformation("dev-test-user", "mlabuda@redhat.com");
+		preferencesWindow.close();
 	}
 
 	private void checkTestResults() {
