@@ -35,8 +35,8 @@ All before-mentioned properties are possible to set using `arquillian.xml` file.
     <property name="openShiftNamespace">your-che-namespace</property>
     ...
   </extension>
-
   ...
+</arquillian>
 ~~~
 
 
