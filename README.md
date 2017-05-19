@@ -22,7 +22,7 @@ Alternatively, you can run tests against an existing Che workspace using its URL
 
 All before-mentioned properties are possible to set using `arquillian.xml` file. To do so, use an extension part with the qualifier `che`.:
 
-~~~java
+~~~xml
 <?xml version="1.0" encoding="UTF-8"?>
 <arquillian xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="http://jboss.org/schema/arquillian"
