@@ -11,6 +11,7 @@ import java.util.concurrent.TimeoutException;
 import org.apache.log4j.Logger;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.jboss.arquillian.core.api.Instance;
 import org.jboss.arquillian.core.api.InstanceProducer;
 import org.jboss.arquillian.core.api.annotation.ApplicationScoped;
 import org.jboss.arquillian.core.api.annotation.Inject;
@@ -19,6 +20,9 @@ import org.jboss.arquillian.test.spi.event.suite.AfterSuite;
 import org.jboss.arquillian.test.spi.event.suite.BeforeSuite;
 import org.jboss.shrinkwrap.resolver.api.maven.embedded.EmbeddedMaven;
 
+import static com.redhat.arquillian.che.Validate.areAllEmpty;
+import static com.redhat.arquillian.che.Validate.isEmpty;
+import static com.redhat.arquillian.che.Validate.isNotEmpty;
 
 public class CheWorkspaceManager {
 
@@ -29,20 +33,18 @@ public class CheWorkspaceManager {
     private InstanceProducer<CheWorkspace> cheWorkspaceInstanceProducer;
 
     @Inject
-    @ApplicationScoped
-    private InstanceProducer<CheExtensionConfiguration> configurationInstanceProducer;
+    private Instance<CheExtensionConfiguration> configurationInstance;
 
     public void setupWorkspace(@Observes BeforeSuite event) {
-        CheExtensionConfiguration cheExtensionConfig = new CheExtensionConfiguration();
-        configurationInstanceProducer.set(cheExtensionConfig);
+        CheExtensionConfiguration cheExtensionConfig = configurationInstance.get();
         checkRunParams(cheExtensionConfig);
 
-        if (cheExtensionConfig.getCheStarterUrl() == null && cheExtensionConfig.getCheWorkspaceUrl() == null) {
+        if (areAllEmpty(cheExtensionConfig.getCheStarterUrl(), cheExtensionConfig.getCheWorkspaceUrl())) {
             startCheStarter();
             cheExtensionConfig.setCheStarterUrl("http://localhost:10000");
         }
 
-        if (cheExtensionConfig.getCheWorkspaceUrl() != null) {
+        if (isNotEmpty(cheExtensionConfig.getCheWorkspaceUrl())) {
             cheWorkspaceInstanceProducer.set(new CheWorkspace(cheExtensionConfig.getCheStarterUrl(), null, null));
         }else {
             cheWorkspaceInstanceProducer.set(createWorkspace(cheExtensionConfig));
@@ -51,7 +53,7 @@ public class CheWorkspaceManager {
 
     private CheWorkspace createWorkspace(CheExtensionConfiguration config) {
         CheWorkspace workspace;
-        if (config.getKeycloakToken() == null) {
+        if (isEmpty(config.getKeycloakToken())) {
             logger.info("Creating Che workspace via Che-starter OpenShift endpoint");
             workspace =
                 CheWorkspaceProvider.createCheWorkspaceOSO(config.getCheStarterUrl(), config.getOpenshiftMasterUrl(),
@@ -64,7 +66,7 @@ public class CheWorkspaceManager {
         logger.info("Workspace successfully created.");
 
         logger.info("Waiting until workspace starts");
-        String authorizationToken = getAuthorizationToken(config);
+        String authorizationToken = config.getAuthorizationToken();
         CheWorkspaceService.waitUntilWorkspaceGetsToState(workspace, CheWorkspaceStatus.RUNNING.getStatus(),
             authorizationToken);
 
@@ -97,21 +99,16 @@ public class CheWorkspaceManager {
         }
     }
 
-    private String getAuthorizationToken(CheExtensionConfiguration configuration) {
-        return (configuration.getKeycloakToken() != null) ? configuration.getKeycloakToken()
-            : configuration.getOpenshiftToken();
-    }
-
     private void checkRunParams(CheExtensionConfiguration configuration) {
         StringBuilder sb = new StringBuilder();
-        if (configuration.getCheWorkspaceUrl() != null) {
+        if (isNotEmpty(configuration.getCheWorkspaceUrl())) {
             return;
         }
-        if (configuration.getOpenshiftMasterUrl() == null) {
+        if (isEmpty(configuration.getOpenshiftMasterUrl())) {
             sb.append("OpenShift master URL cannot be null. Set property "
                 + CheExtensionConfiguration.OPENSHIFT_MASTER_URL_PROPERTY_NAME + "and rerun tests\n");
         }
-        if (configuration.getKeycloakToken() == null && configuration.getOpenshiftToken() == null) {
+        if (areAllEmpty(configuration.getKeycloakToken(), configuration.getOpenshiftToken())) {
             sb.append("Keycloak and OpenShift tokens are null. Set either "
                 + CheExtensionConfiguration.KEYCLOAK_TOKEN_PROPERTY_NAME
                 + " or "
@@ -124,13 +121,13 @@ public class CheWorkspaceManager {
     }
 
     public void cleanUp(@Observes AfterSuite event) {
-        CheExtensionConfiguration cheExtensionConfiguration = configurationInstanceProducer.get();
-        if (cheExtensionConfiguration.getCheWorkspaceUrl() != null) {
+        CheExtensionConfiguration config = configurationInstance.get();
+        if (isNotEmpty(config.getCheWorkspaceUrl())) {
             return;
         }
         CheWorkspace workspace = cheWorkspaceInstanceProducer.get();
-        String authorizationToken = getAuthorizationToken(cheExtensionConfiguration);
-        if (workspace != null && !cheExtensionConfiguration.getPreserveWorkspace()) {
+        String authorizationToken = config.getAuthorizationToken();
+        if (workspace != null && !config.getPreserveWorkspace()) {
             String workspaceStatus = CheWorkspaceService.getWorkspaceStatus(workspace, authorizationToken);
             if (workspaceStatus.equals(CheWorkspaceStatus.RUNNING.getStatus())) {
                 logger.info("Stopping workspace");

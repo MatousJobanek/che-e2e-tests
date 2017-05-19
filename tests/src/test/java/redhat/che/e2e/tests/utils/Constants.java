@@ -10,11 +10,10 @@
  ******************************************************************************/
 package redhat.che.e2e.tests.utils;
 
-public class Constants {
+import static com.redhat.arquillian.che.config.CheExtensionConfiguration.OSIO_PASSWORD_PROPERTY_NAME;
+import static com.redhat.arquillian.che.config.CheExtensionConfiguration.OSIO_USERNAME_PROPERTY_NAME;
 
-	// Properties
-	public static final String OSIO_USERNAME_PROPERTY_NAME = "osioUsername";
-	public static final String OSIO_PASSWORD_PROPERTY_NAME = "osioPassword";
+public class Constants {
 
 	// Current values
 	public static final String OSIO_USERNAME = System.getProperty(OSIO_USERNAME_PROPERTY_NAME);

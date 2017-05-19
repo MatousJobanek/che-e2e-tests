@@ -1,5 +1,11 @@
 package com.redhat.arquillian.che.config;
 
+import com.redhat.arquillian.che.PropertySecurityAction;
+import com.redhat.arquillian.che.Validate;
+import java.util.Map;
+
+import static com.redhat.arquillian.che.Validate.isNotEmpty;
+
 public class CheExtensionConfiguration {
 
     // Properties
@@ -10,15 +16,57 @@ public class CheExtensionConfiguration {
     public static final String PRESERVE_WORKSPACE_PROPERTY_NAME = "preserveWorkspace";
     public static final String OPENSHIFT_NAMESPACE_PROPERTY_NAME = "openShiftNamespace";
     public static final String CHE_WORKSPACE_URL_PROPERTY_NAME = "cheWorkspaceUrl";
+    public static final String OSIO_USERNAME_PROPERTY_NAME = "osioUsername";
+    public static final String OSIO_PASSWORD_PROPERTY_NAME = "osioPassword";
 
-    // Current values
-    private String cheStarterUrl = System.getProperty(CHE_STARTER_PROPERTY_NAME);
-    private String openshiftMasterUrl = System.getProperty(OPENSHIFT_MASTER_URL_PROPERTY_NAME);
-    private String keycloakToken = System.getProperty(KEYCLOAK_TOKEN_PROPERTY_NAME);
-    private String openshiftToken = System.getProperty(OPENSHIFT_TOKEN_PROPERTY_NAME);
-    private String openshiftNamespace = System.getProperty(OPENSHIFT_NAMESPACE_PROPERTY_NAME, "eclipse-che");
-    private String cheWorkspaceUrl = System.getProperty(CHE_WORKSPACE_URL_PROPERTY_NAME);
-    private Boolean preserveWorkspace = Boolean.valueOf(System.getProperty(PRESERVE_WORKSPACE_PROPERTY_NAME));
+    private String cheStarterUrl;
+    private String openshiftMasterUrl;
+    private String keycloakToken;
+    private String openshiftToken;
+    private String openshiftNamespace;
+    private String cheWorkspaceUrl;
+    private Boolean preserveWorkspace;
+
+    private String osioUsername;
+    private String osioPassword;
+
+    static CheExtensionConfiguration fromMap(Map<String, String> reporterProps) {
+        CheExtensionConfiguration config = new CheExtensionConfiguration();
+        config.cheStarterUrl = loadProperty(reporterProps, CHE_STARTER_PROPERTY_NAME);
+        config.openshiftMasterUrl = loadProperty(reporterProps, OPENSHIFT_MASTER_URL_PROPERTY_NAME);
+        config.keycloakToken = loadProperty(reporterProps, KEYCLOAK_TOKEN_PROPERTY_NAME);
+        config.openshiftToken = loadProperty(reporterProps, OPENSHIFT_TOKEN_PROPERTY_NAME);
+        config.openshiftNamespace = loadProperty(reporterProps, OPENSHIFT_NAMESPACE_PROPERTY_NAME, "eclipse-che");
+        config.cheWorkspaceUrl = loadProperty(reporterProps, CHE_WORKSPACE_URL_PROPERTY_NAME);
+        config.preserveWorkspace = Boolean.valueOf(loadProperty(reporterProps, PRESERVE_WORKSPACE_PROPERTY_NAME));
+
+        config.osioUsername = loadPropertyAndSetAsSystemProperty(reporterProps, OSIO_USERNAME_PROPERTY_NAME);
+        config.osioPassword = loadPropertyAndSetAsSystemProperty(reporterProps, OSIO_PASSWORD_PROPERTY_NAME);
+
+        return config;
+    }
+
+    private static String loadProperty(Map<String, String> reporterProps, String propertyName) {
+        String value = PropertySecurityAction.getProperty(propertyName);
+        if (Validate.isEmpty(value)) {
+            value = reporterProps.get(propertyName);
+        }
+        return value;
+    }
+
+    private static String loadPropertyAndSetAsSystemProperty(Map<String, String> reporterProps, String propertyName) {
+        String value = loadProperty(reporterProps, propertyName);
+        PropertySecurityAction.setProperty(propertyName, value);
+        return value;
+    }
+
+    private static String loadProperty(Map<String, String> reporterProps, String propertyName, String defaultValue) {
+        String value = loadProperty(reporterProps, propertyName);
+        if (Validate.isEmpty(value)) {
+            return defaultValue;
+        }
+        return value;
+    }
 
     public String getCheStarterUrl() {
         return cheStarterUrl;
@@ -74,5 +122,25 @@ public class CheExtensionConfiguration {
 
     public void setPreserveWorkspace(Boolean preserveWorkspace) {
         this.preserveWorkspace = preserveWorkspace;
+    }
+
+    public String getAuthorizationToken() {
+        return isNotEmpty(keycloakToken) ? keycloakToken : openshiftToken;
+    }
+
+    public String getOsioUsername() {
+        return osioUsername;
+    }
+
+    public void setOsioUsername(String osioUsername) {
+        this.osioUsername = osioUsername;
+    }
+
+    public String getOsioPassword() {
+        return osioPassword;
+    }
+
+    public void setOsioPassword(String osioPassword) {
+        this.osioPassword = osioPassword;
     }
 }
